@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Badge Presenze</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;background:radial-gradient(circle at 30% 20%,#1d3fd6,#0a1fa8 60%,#06157a);color:#fff}
+.hidden{display:none!important}
+/* LOGIN */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:100%;max-width:420px;background:rgba(40,90,235,.55);border:1px solid rgba(120,170,255,.45);border-radius:26px;padding:34px 28px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.brand{display:flex;align-items:center;gap:12px}
+.card .brand{justify-content:center}
+.logo{width:56px;height:56px;border-radius:14px;background:#22d3e6;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(34,211,230,.6);flex-shrink:0}
+.logo svg{width:30px;height:30px}
+.brand h1{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.brand small{display:block;font-size:12px;opacity:.85}
+.sub{text-align:center;margin:14px 0 20px;font-size:15px;opacity:.9}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.8px;margin:14px 0 7px}
+input{width:100%;padding:15px 16px;border-radius:12px;border:1px solid rgba(140,180,255,.5);background:rgba(10,30,140,.55);color:#fff;font-size:16px;outline:none}
+input::placeholder{color:rgba(190,210,255,.6)}
+#code{text-align:center;letter-spacing:8px;font-size:22px;font-weight:700;text-transform:uppercase}
+.btn{width:100%;margin-top:18px;padding:16px;border:0;border-radius:12px;background:#22d3e6;color:#0b1d5c;font-size:17px;font-weight:600;cursor:pointer;box-shadow:0 0 18px rgba(34,211,230,.45)}
+.sep{display:flex;align-items:center;gap:12px;margin:22px 0 4px;font-size:13px;opacity:.85;justify-content:center}
+.sep:before,.sep:after{content:"";flex:1;height:1px;background:rgba(160,190,255,.4)}
+.err{color:#ffb4b4;font-size:14px;text-align:center;margin-top:12px;min-height:18px}
+/* DASHBOARD */
+#app{min-height:100vh;display:flex;flex-direction:column}
+.top{padding:20px 24px 0;display:flex;justify-content:space-between;align-items:flex-start}
+.top .logo{width:40px;height:40px;border-radius:10px}.top .logo svg{width:22px;height:22px}
+.top h1{font-size:20px}
+.esci{background:transparent;border:1px solid rgba(160,190,255,.5);color:#fff;border-radius:20px;padding:8px 18px;font-size:15px;cursor:pointer}
+.hello{padding:10px 24px 0}
+.hello small{opacity:.85}
+.hello h2{font-size:24px}
+.clockrow{display:flex;justify-content:space-between;align-items:flex-end;padding:6px 24px 0}
+.clock{font-size:52px;font-weight:800;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.date{text-align:right;font-size:14px;opacity:.9}
+.bar{margin:12px 20px 0;padding:14px 18px;border-radius:14px;background:rgba(60,110,245,.6);border:1px solid rgba(140,180,255,.5);display:flex;justify-content:space-between;align-items:center;font-size:17px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9d6ff;margin-right:10px}
+.dot.on{background:#5ff0a0}.dot.pause{background:#ffd166}.dot.off{background:#ff8a80}
+.geo{margin:12px 20px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{border:2px solid #22d3e6;color:#22d3e6;border-radius:24px;padding:9px 16px;font-weight:700;font-size:14px;letter-spacing:.5px}
+.geoinfo{font-size:14px}
+.ok{color:#5ff0a0}.ko{color:#ffb4b4}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px}
+.tile{border:0;border-radius:18px;padding:22px 10px;background:rgba(70,110,230,.55);color:#fff;font-size:17px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:.15s}
+.tile .ic{width:48px;height:48px;border-radius:50%;background:rgba(160,190,255,.3);display:flex;align-items:center;justify-content:center;font-size:22px}
+.tile.active{background:#4ff0d0;color:#0b1d5c;box-shadow:0 0 26px rgba(79,240,208,.55)}
+.tile.active .ic{background:transparent}
+.tile.req{background:rgba(40,90,245,.85);border:1px solid rgba(140,180,255,.6)}
+.tile:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.log{padding:0 24px 16px;font-size:14px;flex:1}
+.log div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(160,190,255,.2)}
+.nav{display:flex;justify-content:space-around;border-top:1px solid rgba(160,190,255,.3);padding:14px 0 22px;background:rgba(5,15,90,.4)}
+.nav div{text-align:center;font-size:14px;font-weight:600;opacity:.85}
+.nav div.sel{color:#4ff0d0;opacity:1}
+.nav .i{font-size:22px;display:block;margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#0b1d5c;border:1px solid #22d3e6;padding:12px 20px;border-radius:12px;font-size:15px;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+.link{background:none;border:0;color:#bfe9ff;text-decoration:underline;font-size:13px;cursor:pointer;margin-left:auto}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="card">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1d5c" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c1-2.2 2.6-3 4.5-3s3.5.8 4.5 3"/></svg></div>
+      <div><h1>Badge Presenze</h1><small>Timbratura geolocalizzata</small></div>
+    </div>
+    <p class="sub">Sede di lavoro</p>
+    <label>EMAIL</label>
+    <input id="email" type="email" value="mario.rossi@azienda.it" placeholder="nome@azienda.it" autocomplete="username">
+    <label>PASSWORD</label>
+    <input id="pass" type="password" value="Badge2026!" placeholder="•••••••••" autocomplete="current-password">
+    <button class="btn" onclick="loginPwd()">Accedi →</button>
+    <div class="sep">OPPURE</div>
+    <label>CODICE</label>
+    <input id="code" maxlength="5" value="K482B" placeholder="ES. E721X">
+    <button class="btn" onclick="loginCode()">Entra con codice 🪪</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="app" class="hidden">
+  <div class="top">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1d5c" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c1-2.2 2.6-3 4.5-3s3.5.8 4.5 3"/></svg></div>
+      <div><h1>Badge Presenze</h1><small>Timbratura geolocalizzata</small></div>
+    </div>
+    <button class="esci" onclick="esci()">Esci</button>
+  </div>
+  <div class="hello"><small>Ciao,</small><h2>Mario Rossi 👋</h2></div>
+  <div class="clockrow"><div class="clock" id="clock">--:--:--</div><div class="date" id="date"></div></div>
+  <div class="bar"><span><span class="dot" id="dot"></span><span id="statoTxt">Non ancora timbrato</span></span><span id="statoOra"></span></div>
+  <div class="geo">
+    <span class="pill">🏢 SEDE DI LAVORO</span>
+    <span class="geoinfo" id="geo">Cerco la posizione…</span>
+    <button class="link" onclick="resetSede()">Imposta sede qui</button>
+  </div>
+  <div class="grid">
+    <button class="tile" id="bEntrata" onclick="timbra('Entrata')"><span class="ic">➜]</span>Entrata</button>
+    <button class="tile" id="bUscita" onclick="timbra('Uscita')"><span class="ic">[➜</span>Uscita</button>
+    <button class="tile" id="bPausa" onclick="timbra('Inizio Pausa')"><span class="ic">☕</span>Inizio Pausa</button>
+    <button class="tile" id="bFinePausa" onclick="timbra('Fine Pausa')"><span class="ic">↺</span>Fine Pausa</button>
+    <button class="tile req" onclick="toast('Richiesta personale inviata')"><span class="ic">📋</span>Richiesta Personale</button>
+    <button class="tile" id="bAut" onclick="timbra('Uscita Autorizzata')"><span class="ic">🏃</span>Uscita Autorizzata</button>
+  </div>
+  <div class="log" id="log"></div>
+  <div class="nav"><div class="sel"><span class="i">⏱</span>Timbra</div><div><span class="i">📄</span>Richieste</div><a href="contabilita.html" style="color:inherit;text-decoration:none"><div><span class="i">📊</span>Contabilità</div></a></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Credenziali inventate
+const UTENTE={email:"mario.rossi@azienda.it",pass:"Badge2026!",code:"K482B"};
+const RAGGIO=20; // metri dalla sede
+
+const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let sede=ls.get("sede"), log=ls.get("log")||[], stato=ls.get("stato")||"fuori";
+let pos=null, watchId=null, inSede=false;
+
+const $=id=>document.getElementById(id);
+function loginPwd(){
+  if($("email").value.trim().toLowerCase()===UTENTE.email && $("pass").value===UTENTE.pass) entra();
+  else $("err").textContent="Email o password errate";
+}
+function loginCode(){
+  if($("code").value.trim().toUpperCase()===UTENTE.code) entra();
+  else $("err").textContent="Codice non valido";
+}
+function entra(){
+  $("err").textContent=""; $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+  disegna(); avviaGPS();
+}
+function esci(){
+  if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+  $("app").classList.add("hidden"); $("login").classList.remove("hidden");
+}
+setInterval(()=>{
+  const d=new Date();
+  $("clock").textContent=d.toLocaleTimeString("it-IT");
+  $("date").innerHTML=d.toLocaleDateString("it-IT",{weekday:"long"})+"<br>"+d.toLocaleDateString("it-IT",{day:"2-digit",month:"long",year:"numeric"});
+},1000);
+
+function distanza(a,b){
+  const R=6371000,r=x=>x*Math.PI/180,dLat=r(b.lat-a.lat),dLon=r(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function avviaGPS(){
+  if(!navigator.geolocation){$("geo").innerHTML='<span class="ko">GPS non disponibile</span>';return}
+  watchId=navigator.geolocation.watchPosition(p=>{
+    pos={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};
+    if(!sede){sede={lat:pos.lat,lon:pos.lon};ls.set("sede",sede);toast("Sede registrata qui");}
+    const d=distanza(sede,pos); inSede=d<=RAGGIO;
+    $("geo").innerHTML=(inSede?'<span class="ok">✅ In sede':'<span class="ko">⛔ Fuori sede')+" · "+Math.round(d)+" m</span> <small>(GPS ±"+Math.round(pos.acc)+" m)</small>";
+    disegna();
+  },e=>{inSede=false;$("geo").innerHTML='<span class="ko">'+(window.isSecureContext&&window.top===window?'Posizione negata: attivala in Impostazioni → Privacy → Localizzazione → Siti web di Safari':'GPS bloccato qui: apri la pagina dal link https in Safari')+'</span>';disegna();},
+  {enableHighAccuracy:true,maximumAge:0,timeout:20000});
+}
+function timbra(tipo){
+  if(!inSede){toast("Devi essere entro "+RAGGIO+" m dalla sede");return}
+  const ora=new Date();
+  log.unshift({tipo,ora:ora.toLocaleString("it-IT")});
+  const ev=ls.get("eventi")||[]; ev.push({tipo,ora:ora.toISOString(),utente:"Mario Rossi"}); ls.set("eventi",ev); // inviato alla Contabilità
+  stato={"Entrata":"dentro","Fine Pausa":"dentro","Inizio Pausa":"pausa","Uscita":"fuori","Uscita Autorizzata":"fuori"}[tipo];
+  ls.set("log",log); ls.set("stato",stato); ls.set("ultima",ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
+  toast(tipo+" inviata alla contabilità ✔"); disegna();
+}
+function disegna(){
+  const ok=inSede;
+  $("bEntrata").disabled=!ok||stato!=="fuori";
+  $("bUscita").disabled=!ok||stato!=="dentro";
+  $("bPausa").disabled=!ok||stato!=="dentro";
+  $("bFinePausa").disabled=!ok||stato!=="pausa";
+  $("bAut").disabled=!ok||stato!=="dentro";
+  $("bEntrata").classList.toggle("active",ok&&stato==="fuori");
+  $("bUscita").classList.toggle("active",ok&&stato==="dentro");
+  $("bFinePausa").classList.toggle("active",ok&&stato==="pausa");
+  const t={fuori:log.length?"Uscito":"Non ancora timbrato",dentro:"In servizio",pausa:"In pausa"}[stato];
+  $("statoTxt").textContent=t;
+  $("dot").className="dot "+({fuori:log.length?"off":"",dentro:"on",pausa:"pause"}[stato]);
+  $("statoOra").textContent=log.length?(ls.get("ultima")||""):"";
+  $("log").innerHTML=log.slice(0,20).map(x=>`<div><span>${x.tipo}</span><span>${x.ora}</span></div>`).join("");
+}
+function resetSede(){
+  if(!pos){toast("Posizione non ancora disponibile");return}
+  sede={lat:pos.lat,lon:pos.lon};ls.set("sede",sede);toast("Sede aggiornata qui");
+  inSede=true; $("geo").innerHTML='<span class="ok">✅ In sede · 0 m</span>'; disegna();
+}
+let tt;function toast(m){$("toast").textContent=m;$("toast").classList.add("show");clearTimeout(tt);tt=setTimeout(()=>$("toast").classList.remove("show"),2200)}
+$("code").addEventListener("keydown",e=>{if(e.key==="Enter")loginCode()});
+$("pass").addEventListener("keydown",e=>{if(e.key==="Enter")loginPwd()});
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ufficio Contabilità</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;background:#f4f6fb;color:#1b2340}
+header{background:linear-gradient(135deg,#0a1fa8,#1d3fd6);color:#fff;padding:22px 20px 26px}
+header h1{font-size:24px}
+header small{opacity:.85}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px}
+.stat{background:rgba(255,255,255,.14);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:12px;opacity:.85}
+.wrap{padding:16px}
+.live{display:flex;align-items:center;gap:8px;font-size:13px;color:#5a6488;margin-bottom:12px}
+.pulse{width:9px;height:9px;border-radius:50%;background:#22c55e;animation:p 1.6s infinite}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.turno{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,40,120,.08);border-left:5px solid #22d3e6}
+.turno.aperto{border-left-color:#f59e0b}
+.row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.data{font-weight:700;font-size:16px;text-transform:capitalize}
+.badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:#e0f7fa;color:#0b6d7a;white-space:nowrap}
+.aperto .badge{background:#fef3c7;color:#92400e}
+.orari{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap}
+.orari div span{display:block;font-size:11px;color:#7a84a8;text-transform:uppercase;letter-spacing:.5px}
+.orari div b{font-size:18px}
+.chi{font-size:13px;color:#5a6488;margin-top:8px}
+.vuoto{text-align:center;color:#7a84a8;padding:40px 10px;line-height:1.6}
+.back{display:inline-block;margin-top:14px;color:#fff;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 Ufficio Contabilità</h1>
+  <small>Turni ricevuti dall'app Badge Presenze</small>
+  <div class="stats">
+    <div class="stat"><b id="sTurni">0</b><span>Turni chiusi</span></div>
+    <div class="stat"><b id="sOre">0:00</b><span>Ore totali</span></div>
+    <div class="stat"><b id="sOggi">0:00</b><span>Ore oggi</span></div>
+  </div>
+  <a class="back" href="index.html">← Torna al Badge</a>
+</header>
+<div class="wrap">
+  <div class="live"><span class="pulse"></span><span id="agg">Collegamento…</span></div>
+  <div id="lista"></div>
+</div>
+<script>
+const hhmm=d=>d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+const dur=ms=>{const m=Math.max(0,Math.round(ms/60000));return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
+function leggi(){try{return JSON.parse(localStorage.getItem("eventi"))||[]}catch(e){return []}}
+function calcolaTurni(ev){
+  ev=ev.slice().sort((a,b)=>new Date(a.ora)-new Date(b.ora));
+  const turni=[];let cur=null;
+  for(const e of ev){
+    const t=new Date(e.ora);
+    if(e.tipo==="Entrata"){cur={utente:e.utente,inizio:t,fine:null,pausa:0,inPausa:null,tipoUscita:""};turni.push(cur);}
+    else if(!cur) continue;
+    else if(e.tipo==="Inizio Pausa"){cur.inPausa=t;}
+    else if(e.tipo==="Fine Pausa"&&cur.inPausa){cur.pausa+=t-cur.inPausa;cur.inPausa=null;}
+    else if(e.tipo==="Uscita"||e.tipo==="Uscita Autorizzata"){
+      if(cur.inPausa){cur.pausa+=t-cur.inPausa;cur.inPausa=null;}
+      cur.fine=t;cur.tipoUscita=e.tipo;cur=null;
+    }
+  }
+  return turni.reverse();
+}
+function aggiorna(){
+  const turni=calcolaTurni(leggi()), ora=new Date(), oggi=ora.toDateString();
+  let tot=0,totOggi=0;
+  const l=document.getElementById("lista");
+  if(!turni.length){l.innerHTML='<div class="vuoto">Nessun turno ancora.<br>Timbra l\'Entrata dall\'app Badge.</div>';}
+  else l.innerHTML=turni.map(t=>{
+    const fine=t.fine||ora, lavoro=(fine-t.inizio)-t.pausa-(t.inPausa?ora-t.inPausa:0);
+    if(t.fine) tot+=lavoro;
+    if(t.inizio.toDateString()===oggi) totOggi+=lavoro;
+    return `<div class="turno ${t.fine?"":"aperto"}">
+      <div class="row1"><span class="data">${t.inizio.toLocaleDateString("it-IT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}</span>
+      <span class="badge">${t.fine?(t.tipoUscita==="Uscita Autorizzata"?"Uscita autorizzata":"Chiuso"):"In corso"}</span></div>
+      <div class="orari">
+        <div><span>Inizio</span><b>${hhmm(t.inizio)}</b></div>
+        <div><span>Fine</span><b>${t.fine?hhmm(t.fine):"—"}</b></div>
+        <div><span>Pausa</span><b>${dur(t.pausa)}</b></div>
+        <div><span>Ore lavorate</span><b>${dur(lavoro)}</b></div>
+      </div>
+      <div class="chi">👤 ${t.utente||"—"}</div></div>`;
+  }).join("");
+  document.getElementById("sTurni").textContent=turni.filter(t=>t.fine).length;
+  document.getElementById("sOre").textContent=dur(tot);
+  document.getElementById("sOggi").textContent=dur(totOggi);
+  document.getElementById("agg").textContent="In tempo reale · aggiornato alle "+ora.toLocaleTimeString("it-IT");
+}
+aggiorna(); setInterval(aggiorna,3000);
+window.addEventListener("storage",aggiorna);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)aggiorna()});
+</script>
+</body>
+</html>
