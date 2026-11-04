@@ -29,6 +29,17 @@ header small{opacity:.85}
 .orari div b{font-size:18px}
 .chi{font-size:13px;color:#5a6488;margin-top:8px}
 .vuoto{text-align:center;color:#7a84a8;padding:40px 10px;line-height:1.6}
+.hidden{display:none}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs button{flex:1;padding:11px;border-radius:10px;border:1px solid #c9d2f0;background:#fff;font-size:15px;font-weight:600;color:#1b2340}
+.tabs button.on{background:#1d3fd6;color:#fff;border-color:#1d3fd6}
+.dip{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(20,40,120,.08)}
+.dip .top{display:flex;justify-content:space-between;align-items:center}
+.dip .n{font-weight:700;font-size:16px}
+.dip .ru{font-size:13px;color:#7a84a8}
+.cred{margin-top:8px;font-size:14px;line-height:1.7;font-family:ui-monospace,Menlo,monospace;background:#f4f6fb;border-radius:8px;padding:8px 10px;word-break:break-all}
+.st{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:#eef1f8;color:#5a6488;white-space:nowrap}
+.st.on{background:#dcfce7;color:#166534}
 .back{display:inline-block;margin-top:14px;color:#fff;font-size:14px}
 </style>
 </head>
@@ -45,24 +56,28 @@ header small{opacity:.85}
 </header>
 <div class="wrap">
   <div class="live"><span class="pulse"></span><span id="agg">Collegamento…</span></div>
+  <div class="tabs"><button id="tT" class="on" onclick="tab('T')">Turni</button><button id="tD" onclick="tab('D')">Dipendenti</button></div>
   <div id="lista"></div>
+  <div id="dip" class="hidden"></div>
 </div>
+<script src="utenti.js"></script>
 <script>
 const hhmm=d=>d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
 const dur=ms=>{const m=Math.max(0,Math.round(ms/60000));return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
 function leggi(){try{return JSON.parse(localStorage.getItem("eventi"))||[]}catch(e){return []}}
 function calcolaTurni(ev){
   ev=ev.slice().sort((a,b)=>new Date(a.ora)-new Date(b.ora));
-  const turni=[];let cur=null;
+  const turni=[];const aperti={};
   for(const e of ev){
     const t=new Date(e.ora);
-    if(e.tipo==="Entrata"){cur={utente:e.utente,inizio:t,fine:null,pausa:0,inPausa:null,tipoUscita:""};turni.push(cur);}
+    let cur=aperti[e.utente];
+    if(e.tipo==="Entrata"){cur={utente:e.utente,inizio:t,fine:null,pausa:0,inPausa:null,tipoUscita:""};turni.push(cur);aperti[e.utente]=cur;}
     else if(!cur) continue;
     else if(e.tipo==="Inizio Pausa"){cur.inPausa=t;}
     else if(e.tipo==="Fine Pausa"&&cur.inPausa){cur.pausa+=t-cur.inPausa;cur.inPausa=null;}
     else if(e.tipo==="Uscita"||e.tipo==="Uscita Autorizzata"){
       if(cur.inPausa){cur.pausa+=t-cur.inPausa;cur.inPausa=null;}
-      cur.fine=t;cur.tipoUscita=e.tipo;cur=null;
+      cur.fine=t;cur.tipoUscita=e.tipo;delete aperti[e.utente];
     }
   }
   return turni.reverse();
@@ -90,8 +105,16 @@ function aggiorna(){
   document.getElementById("sTurni").textContent=turni.filter(t=>t.fine).length;
   document.getElementById("sOre").textContent=dur(tot);
   document.getElementById("sOggi").textContent=dur(totOggi);
+  const perU={};turni.forEach(t=>{const f=t.fine||ora;perU[t.utente]=perU[t.utente]||{ore:0,aperto:false};
+    perU[t.utente].ore+=(f-t.inizio)-t.pausa-(t.inPausa?ora-t.inPausa:0); if(!t.fine)perU[t.utente].aperto=true;});
+  document.getElementById("dip").innerHTML=UTENTI.map(u=>{const s=perU[u.nome]||{ore:0,aperto:false};
+    return `<div class="dip"><div class="top"><div><div class="n">${u.nome}</div><div class="ru">${u.ruolo} · ore totali ${dur(s.ore)}</div></div>
+    <span class="st ${s.aperto?"on":""}">${s.aperto?"In servizio":"Fuori"}</span></div>
+    <div class="cred">📧 ${u.email}<br>🔑 ${u.pass}<br>🪪 ${u.code}</div></div>`;}).join("");
   document.getElementById("agg").textContent="In tempo reale · aggiornato alle "+ora.toLocaleTimeString("it-IT");
 }
+function tab(x){document.getElementById("lista").classList.toggle("hidden",x!=="T");document.getElementById("dip").classList.toggle("hidden",x!=="D");
+  document.getElementById("tT").classList.toggle("on",x==="T");document.getElementById("tD").classList.toggle("on",x==="D");}
 aggiorna(); setInterval(aggiorna,3000);
 window.addEventListener("storage",aggiorna);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)aggiorna()});

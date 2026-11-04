@@ -96,7 +96,7 @@ input::placeholder{color:rgba(190,210,255,.6)}
     </div>
     <button class="esci" onclick="esci()">Esci</button>
   </div>
-  <div class="hello"><small>Ciao,</small><h2>Mario Rossi 👋</h2></div>
+  <div class="hello"><small>Ciao,</small><h2 id="nome">Mario Rossi 👋</h2></div>
   <div class="clockrow"><div class="clock" id="clock">--:--:--</div><div class="date" id="date"></div></div>
   <div class="bar"><span><span class="dot" id="dot"></span><span id="statoTxt">Non ancora timbrato</span></span><span id="statoOra"></span></div>
   <div class="geo">
@@ -117,26 +117,32 @@ input::placeholder{color:rgba(190,210,255,.6)}
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="utenti.js"></script>
 <script>
 // Credenziali inventate
-const UTENTE={email:"mario.rossi@azienda.it",pass:"Badge2026!",code:"K482B"};
+let UTENTE=UTENTI[0];
 const RAGGIO=20; // metri dalla sede
 
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let sede=ls.get("sede"), log=ls.get("log")||[], stato=ls.get("stato")||"fuori";
+let sede=ls.get("sede"), log=[], stato="fuori";
+const K=k=>k+"_"+UTENTE.code;
 let pos=null, watchId=null, inSede=false;
 
 const $=id=>document.getElementById(id);
 function loginPwd(){
-  if($("email").value.trim().toLowerCase()===UTENTE.email && $("pass").value===UTENTE.pass) entra();
+  const u=UTENTI.find(x=>x.email===$("email").value.trim().toLowerCase()&&x.pass===$("pass").value);
+  if(u){UTENTE=u;entra();}
   else $("err").textContent="Email o password errate";
 }
 function loginCode(){
-  if($("code").value.trim().toUpperCase()===UTENTE.code) entra();
+  const u=UTENTI.find(x=>x.code===$("code").value.trim().toUpperCase());
+  if(u){UTENTE=u;entra();}
   else $("err").textContent="Codice non valido";
 }
 function entra(){
+  log=ls.get(K("log"))||[]; stato=ls.get(K("stato"))||"fuori";
+  $("nome").textContent=UTENTE.nome+" 👋";
   $("err").textContent=""; $("login").classList.add("hidden"); $("app").classList.remove("hidden");
   disegna(); avviaGPS();
 }
@@ -170,9 +176,9 @@ function timbra(tipo){
   if(!inSede){toast("Devi essere entro "+RAGGIO+" m dalla sede");return}
   const ora=new Date();
   log.unshift({tipo,ora:ora.toLocaleString("it-IT")});
-  const ev=ls.get("eventi")||[]; ev.push({tipo,ora:ora.toISOString(),utente:"Mario Rossi"}); ls.set("eventi",ev); // inviato alla Contabilità
+  const ev=ls.get("eventi")||[]; ev.push({tipo,ora:ora.toISOString(),utente:UTENTE.nome}); ls.set("eventi",ev); // inviato alla Contabilità
   stato={"Entrata":"dentro","Fine Pausa":"dentro","Inizio Pausa":"pausa","Uscita":"fuori","Uscita Autorizzata":"fuori"}[tipo];
-  ls.set("log",log); ls.set("stato",stato); ls.set("ultima",ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
+  ls.set(K("log"),log); ls.set(K("stato"),stato); ls.set(K("ultima"),ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
   toast(tipo+" inviata alla contabilità ✔"); disegna();
 }
 function disegna(){
@@ -188,7 +194,7 @@ function disegna(){
   const t={fuori:log.length?"Uscito":"Non ancora timbrato",dentro:"In servizio",pausa:"In pausa"}[stato];
   $("statoTxt").textContent=t;
   $("dot").className="dot "+({fuori:log.length?"off":"",dentro:"on",pausa:"pause"}[stato]);
-  $("statoOra").textContent=log.length?(ls.get("ultima")||""):"";
+  $("statoOra").textContent=log.length?(ls.get(K("ultima"))||""):"";
   $("log").innerHTML=log.slice(0,20).map(x=>`<div><span>${x.tipo}</span><span>${x.ora}</span></div>`).join("");
 }
 function resetSede(){
