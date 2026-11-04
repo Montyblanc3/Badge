@@ -30,6 +30,10 @@ header small{opacity:.85}
 .chi{font-size:13px;color:#5a6488;margin-top:8px}
 .vuoto{text-align:center;color:#7a84a8;padding:40px 10px;line-height:1.6}
 .hidden{display:none}
+.ore{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.ore div{background:#eef3ff;border-radius:10px;padding:8px;text-align:center}
+.ore span{display:block;font-size:11px;color:#5a6488;text-transform:uppercase;letter-spacing:.4px}
+.ore b{font-size:18px;color:#0a1fa8}
 .rep{font-size:18px;font-weight:800;margin:18px 2px 10px;color:#0a1fa8}
 .rep small{font-size:13px;font-weight:500;color:#7a84a8;margin-left:6px}
 .tabs{display:flex;gap:8px;margin-bottom:14px}
@@ -109,13 +113,17 @@ function aggiorna(){
   document.getElementById("sTurni").textContent=turni.filter(t=>t.fine).length;
   document.getElementById("sOre").textContent=dur(tot);
   document.getElementById("sOggi").textContent=dur(totOggi);
-  const perU={};turni.forEach(t=>{const f=t.fine||ora;perU[t.utente]=perU[t.utente]||{ore:0,aperto:false};
-    perU[t.utente].ore+=(f-t.inizio)-t.pausa-(t.inPausa?ora-t.inPausa:0); if(!t.fine)perU[t.utente].aperto=true;});
+  const lun=new Date(ora);lun.setHours(0,0,0,0);lun.setDate(lun.getDate()-((lun.getDay()+6)%7)); // lunedì
+  const mese=new Date(ora.getFullYear(),ora.getMonth(),1);
+  const perU={};turni.forEach(t=>{const f=t.fine||ora;const s=perU[t.utente]=perU[t.utente]||{ore:0,sett:0,mese:0,aperto:false};
+    const w=(f-t.inizio)-t.pausa-(t.inPausa?ora-t.inPausa:0);
+    s.ore+=w; if(t.inizio>=lun)s.sett+=w; if(t.inizio>=mese)s.mese+=w; if(!t.fine)s.aperto=true;});
   document.getElementById("dip").innerHTML=REPARTI.map(rep=>{const lst=UTENTI.filter(u=>u.reparto===rep);
     const inS=lst.filter(u=>(perU[u.nome]||{}).aperto).length;
-    return `<div class="rep">${ICO[rep]} ${rep} <small>${lst.length} dipendent${lst.length===1?"e":"i"} · ${inS} in servizio</small></div>`+lst.map(u=>{const s=perU[u.nome]||{ore:0,aperto:false};
-    return `<div class="dip"><div class="top"><div><div class="n">${u.nome}</div><div class="ru">${u.ruolo} · ore totali ${dur(s.ore)}</div></div>
+    return `<div class="rep">${ICO[rep]} ${rep} <small>${lst.length} dipendent${lst.length===1?"e":"i"} · ${inS} in servizio</small></div>`+lst.map(u=>{const s=perU[u.nome]||{ore:0,sett:0,mese:0,aperto:false};
+    return `<div class="dip"><div class="top"><div><div class="n">${u.nome}</div><div class="ru">${u.ruolo}</div></div>
     <span class="st ${s.aperto?"on":""}">${s.aperto?"In servizio":"Fuori"}</span></div>
+    <div class="ore"><div><span>Settimana</span><b>${dur(s.sett)}</b></div><div><span>${ora.toLocaleDateString("it-IT",{month:"long"})}</span><b>${dur(s.mese)}</b></div><div><span>Totale</span><b>${dur(s.ore)}</b></div></div>
     <div class="cred">📧 ${u.email}<br>🔑 ${u.pass}<br>🪪 ${u.code}</div></div>`;}).join("");}).join("");
   document.getElementById("agg").textContent="In tempo reale · aggiornato alle "+ora.toLocaleTimeString("it-IT");
 }
