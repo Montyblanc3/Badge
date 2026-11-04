@@ -96,7 +96,7 @@ input::placeholder{color:rgba(190,210,255,.6)}
     </div>
     <button class="esci" onclick="esci()">Esci</button>
   </div>
-  <div class="hello"><small>Ciao,</small><h2 id="nome">Mario Rossi 👋</h2></div>
+  <div class="hello"><small>Ciao,</small><h2 id="nome">Mario Rossi 👋</h2><small id="rep"></small></div>
   <div class="clockrow"><div class="clock" id="clock">--:--:--</div><div class="date" id="date"></div></div>
   <div class="bar"><span><span class="dot" id="dot"></span><span id="statoTxt">Non ancora timbrato</span></span><span id="statoOra"></span></div>
   <div class="geo">
@@ -142,7 +142,7 @@ function loginCode(){
 }
 function entra(){
   log=ls.get(K("log"))||[]; stato=ls.get(K("stato"))||"fuori";
-  $("nome").textContent=UTENTE.nome+" 👋";
+  $("nome").textContent=UTENTE.nome+" 👋"; $("rep").textContent=UTENTE.ruolo+" · Reparto "+UTENTE.reparto;
   $("err").textContent=""; $("login").classList.add("hidden"); $("app").classList.remove("hidden");
   disegna(); avviaGPS();
 }

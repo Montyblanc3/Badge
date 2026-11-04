@@ -30,6 +30,8 @@ header small{opacity:.85}
 .chi{font-size:13px;color:#5a6488;margin-top:8px}
 .vuoto{text-align:center;color:#7a84a8;padding:40px 10px;line-height:1.6}
 .hidden{display:none}
+.rep{font-size:18px;font-weight:800;margin:18px 2px 10px;color:#0a1fa8}
+.rep small{font-size:13px;font-weight:500;color:#7a84a8;margin-left:6px}
 .tabs{display:flex;gap:8px;margin-bottom:14px}
 .tabs button{flex:1;padding:11px;border-radius:10px;border:1px solid #c9d2f0;background:#fff;font-size:15px;font-weight:600;color:#1b2340}
 .tabs button.on{background:#1d3fd6;color:#fff;border-color:#1d3fd6}
@@ -62,6 +64,8 @@ header small{opacity:.85}
 </div>
 <script src="utenti.js"></script>
 <script>
+const ICO={Sala:"🍽️",Cucina:"👨‍🍳",Bar:"☕",Pizzeria:"🍕",Pasticceria:"🧁"};
+const REP=Object.fromEntries(UTENTI.map(u=>[u.nome,u.reparto]));
 const hhmm=d=>d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
 const dur=ms=>{const m=Math.max(0,Math.round(ms/60000));return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
 function leggi(){try{return JSON.parse(localStorage.getItem("eventi"))||[]}catch(e){return []}}
@@ -100,17 +104,19 @@ function aggiorna(){
         <div><span>Pausa</span><b>${dur(t.pausa)}</b></div>
         <div><span>Ore lavorate</span><b>${dur(lavoro)}</b></div>
       </div>
-      <div class="chi">👤 ${t.utente||"—"}</div></div>`;
+      <div class="chi">👤 ${t.utente||"—"}${REP[t.utente]?" · "+ICO[REP[t.utente]]+" "+REP[t.utente]:""}</div></div>`;
   }).join("");
   document.getElementById("sTurni").textContent=turni.filter(t=>t.fine).length;
   document.getElementById("sOre").textContent=dur(tot);
   document.getElementById("sOggi").textContent=dur(totOggi);
   const perU={};turni.forEach(t=>{const f=t.fine||ora;perU[t.utente]=perU[t.utente]||{ore:0,aperto:false};
     perU[t.utente].ore+=(f-t.inizio)-t.pausa-(t.inPausa?ora-t.inPausa:0); if(!t.fine)perU[t.utente].aperto=true;});
-  document.getElementById("dip").innerHTML=UTENTI.map(u=>{const s=perU[u.nome]||{ore:0,aperto:false};
+  document.getElementById("dip").innerHTML=REPARTI.map(rep=>{const lst=UTENTI.filter(u=>u.reparto===rep);
+    const inS=lst.filter(u=>(perU[u.nome]||{}).aperto).length;
+    return `<div class="rep">${ICO[rep]} ${rep} <small>${lst.length} dipendent${lst.length===1?"e":"i"} · ${inS} in servizio</small></div>`+lst.map(u=>{const s=perU[u.nome]||{ore:0,aperto:false};
     return `<div class="dip"><div class="top"><div><div class="n">${u.nome}</div><div class="ru">${u.ruolo} · ore totali ${dur(s.ore)}</div></div>
     <span class="st ${s.aperto?"on":""}">${s.aperto?"In servizio":"Fuori"}</span></div>
-    <div class="cred">📧 ${u.email}<br>🔑 ${u.pass}<br>🪪 ${u.code}</div></div>`;}).join("");
+    <div class="cred">📧 ${u.email}<br>🔑 ${u.pass}<br>🪪 ${u.code}</div></div>`;}).join("");}).join("");
   document.getElementById("agg").textContent="In tempo reale · aggiornato alle "+ora.toLocaleTimeString("it-IT");
 }
 function tab(x){document.getElementById("lista").classList.toggle("hidden",x!=="T");document.getElementById("dip").classList.toggle("hidden",x!=="D");
